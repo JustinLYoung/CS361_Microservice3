@@ -24,7 +24,7 @@ print("[microservice 3] listening on tcp://*:5555")
 def timestamp():
     return datetime.now(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
 
-# USER STORY #: generate response for ping
+# USER STORY 2: generate response for ping
 def pong():
     return {"status": 200, "message": "pong"}
 
@@ -43,7 +43,7 @@ def return_timestamp(payload):
     
     # check if clientID is in whitelist
     if client_id not in WHITELIST:
-        return {"status": 401, "error": "clientID is not a whitelisted APP"}
+        return {"status": 400, "error": "clientID is not a whitelisted APP"}
 
     # check for missing eventName 
     if not event_name:
@@ -51,15 +51,16 @@ def return_timestamp(payload):
     # check if eventName is string
     if not isinstance(event_name, str):
         return {"status": 400, "error": "invalid or missing field: eventName"}
-    
-    key = (client_id, event_name)
 
     event_timestamp = timestamp()
     event_log.setdefault(client_id, []).append({"eventName": event_name, "timestamp": event_timestamp})
 
     return {"status": 200, "message": "timestamp", "timestamp": event_timestamp}
 
-
+# USER STORY 3: generate a log (story is just to create log file)
+def save_event_log():
+    with open("event_log.json", "w", encoding="utf-8") as f:
+        json.dump(event_log, f, indent=2, ensure_ascii=False)
     
 
 # identify request from listener
@@ -68,6 +69,8 @@ def create_response(payload):
     # check that action was defined
     if not action:
         return {"status": 400, "error": "invalid or missing field: action"}
+    if not isinstance(action, str):
+        return {"status": 400, "error": "invalid or missing field: action"}
 
     if action == "ping":
         return pong()
@@ -75,6 +78,7 @@ def create_response(payload):
     if action == "timestamp":
         return return_timestamp(payload)
 
+    return {"status": 400, "error": "unknown action"}
 
 # main loop
 while True:
@@ -83,7 +87,15 @@ while True:
     print(f"[microservice 3] received: {text}")
     # copied from ZMQ
     if text == "Q":
-        socket.send_string(json.dumps({"status": 200, "message": "bye"}))
+        # we'll send a json of all entries
+        count = sum(len(v) for v in event_log.values())
+        socket.send_string(json.dumps({"status": 200, 
+            "message": 
+            "bye", 
+            "count": count,
+            "events": event_log
+        }))
+        save_event_log()
         break
 
     payload = json.loads(text)
