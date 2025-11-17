@@ -56,7 +56,7 @@ Response:
 Note: 
 update or change your app name in the server.py whitelist -- and have that name refelcted in your calls.
 
-## How to <ins>Request</ins> Data programatically
+## How to Request Data programatically
 Install all dependencies and set up the ZMQ socket.
 Use the `call()` function below to send a request to the server.
 ```
@@ -82,7 +82,7 @@ def call(object):
 Example call:
 `call({ "action": "ping" })`
 
-## How to <ins>Receive</ins> Data programatically
+## How to Receive Data programatically
 Receiving is performed inside the `call()` function. The function will make a call to the server, return a JSON reply, decode it, and print that response in the program terminal.
 ```
 def call(object):
@@ -97,4 +97,4 @@ Example call:
 `{ "status": 400, "error": "invalid json" }`
 
 ## UML diagram
-[in progress -- EOD today]
+![UML diagram](UML.PNG)
